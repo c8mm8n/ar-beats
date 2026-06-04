@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Взор — AR + Hard Rock</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background: #0a0f12;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            overflow-x: auto;
+            overflow-y: auto;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2vh 1vw;
+        }
+
+        .vizor-container {
+            width: 150%;
+            max-width: 2200px;
+            margin: 0 auto;
+            padding: 1vh 2vw;
+        }
+
+        .vizor-content {
+            background: #1e2a1e;
+            backdrop-filter: blur(12px);
+            border-radius: 36px;
+            padding: clamp(16px, 3.5vh, 32px) clamp(24px, 6vw, 64px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 200, 100, 0.25);
+            border: 1px solid rgba(255, 200, 100, 0.3);
+        }
+
+        .info-bar-top {
+            position: relative;
+            height: clamp(60px, 11vh, 100px);
+            margin-bottom: clamp(14px, 2.5vh, 24px);
+        }
+
+        .left-block {
+            position: absolute;
+            left: 25%;
+            transform: translateX(-50%);
+            top: 0;
+            display: flex;
+            gap: clamp(10px, 1.8vw, 28px);
+        }
+
+        .right-block {
+            position: absolute;
+            left: 75%;
+            transform: translateX(-50%);
+            top: 0;
+            display: flex;
+            gap: clamp(10px, 1.8vw, 28px);
+        }
+
+        .center-title {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            white-space: nowrap;
+        }
+
+        .title-text {
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
+            font-weight: 800;
+            background: linear-gradient(135deg, #FFE6B0, #FFAA55);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+
+        .vizor-eye {
+            background: rgba(0, 0, 0, 0.55);
+            border-radius: 60px;
+            padding: clamp(5px, 1.2vh, 11px) clamp(14px, 2.5vw, 30px);
+            backdrop-filter: blur(4px);
+            display: inline-flex;
+            align-items: baseline;
+            gap: clamp(5px, 1vw, 12px);
+            border: 1px solid rgba(255,215,150,0.2);
+            white-space: nowrap;
+        }
+
+        .value-number {
+            font-size: clamp(1.1rem, 3vw, 2.1rem);
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            line-height: 1;
+        }
+
+        .unit-label {
+            font-size: clamp(0.8rem, 1.8vw, 1.25rem);
+            font-weight: 600;
+            opacity: 0.95;
+        }
+
+        .white-color .value-number, .white-color .unit-label { color: #ffffff; }
+        .red-color .value-number, .red-color .unit-label { color: #ff8f72; }
+        .blue-color .value-number, .blue-color .unit-label { color: #6bc9ff; }
+        .cyan-color .value-number, .cyan-color .unit-label { color: #5fe3d0; }
+        .magenta-color .value-number, .magenta-color .unit-label { color: #e29cff; }
+        .yellow-color .value-number, .yellow-color .unit-label { color: #fae672; }
+
+        .ruler-section {
+            margin-bottom: clamp(24px, 4vh, 42px);
+        }
+        .ruler-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding: 0 10px;
+        }
+        .ruler-title {
+            font-size: clamp(12px, 1.8vw, 15px);
+            font-weight: 600;
+            color: #ccddaa;
+        }
+        .hr-badge {
+            background: #ff884488;
+            padding: 2px 14px;
+            border-radius: 24px;
+            font-size: 12px;
+            color: white;
+            font-weight: 600;
+        }
+        .beat-ruler {
+            position: relative;
+            background: rgba(0, 0, 0, 0.55);
+            border-radius: 32px;
+            padding: clamp(14px, 2.8vh, 28px) 0 clamp(32px, 5vh, 58px) 0;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.5), 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .ruler-strip {
+            position: relative;
+            width: 100%;
+            height: clamp(50px, 9vh, 90px);
+        }
+        .beat-marker {
+            position: absolute;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            top: 0;
+            bottom: 0;
+        }
+        .bar-line {
+            width: 2px;
+            background: white;
+            border-radius: 2px;
+        }
+        .white-beat .bar-line {
+            background: #fff2cf;
+            box-shadow: 0 0 8px #ffea9e;
+            height: clamp(50px, 8vh, 85px);
+            width: 3px;
+        }
+        .red-beat .bar-line {
+            background: #ff8f72;
+            height: clamp(34px, 5.5vh, 60px);
+            width: 2.5px;
+            box-shadow: 0 0 4px #ff6642;
+        }
+        .blue-beat .bar-line {
+            background: #6bc9ff;
+            height: clamp(28px, 4.5vh, 50px);
+            width: 2px;
+            box-shadow: 0 0 3px #2f9eff;
+        }
+        .green-dot {
+            width: clamp(4px, 1vw, 7px);
+            height: clamp(4px, 1vw, 7px);
+            background: #7fff7b;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #5eff66;
+            margin: 0 auto;
+        }
+        .beat-index {
+            font-size: clamp(10px, 2vw, 14px);
+            color: #f0f0e0;
+            font-weight: 800;
+            background: #000000bb;
+            padding: clamp(2px, 0.6vh, 5px) clamp(8px, 1.5vw, 14px);
+            border-radius: 32px;
+            font-family: monospace;
+            position: absolute;
+            bottom: clamp(-32px, -5.5vh, -45px);
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            backdrop-filter: blur(2px);
+        }
+        .pointer-indicator {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 3.5px;
+            z-index: 30;
+            transform: translateX(-50%);
+            transition: left 0.08s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            pointer-events: none;
+        }
+        .pointer-indicator::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: calc(50% - 22px);
+            background: #FFD966;
+            border-radius: 3px;
+            box-shadow: 0 0 12px 2px #FFA847;
+        }
+        .pointer-indicator .glow {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: calc(50% - 22px);
+            background: #FFD966;
+            border-radius: 3px;
+            box-shadow: 0 0 12px 2px #FFA847;
+        }
+        .pointer-indicator::after {
+            content: "▼";
+            position: absolute;
+            top: clamp(-24px, -4.5vh, -30px);
+            left: -6px;
+            font-size: clamp(15px, 2.8vw, 19px);
+            color: #FFCC55;
+            text-shadow: 0 0 4px black;
+        }
+
+        .control-panel {
+            margin-top: clamp(22px, 4.5vh, 42px);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 28px;
+            justify-content: space-between;
+            background: rgba(0, 0, 0, 0.45);
+            border-radius: 52px;
+            padding: 16px 32px;
+            backdrop-filter: blur(5px);
+            align-items: flex-end;
+        }
+        .slider-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 700;
+            font-size: clamp(13px, 1.8vw, 17px);
+            color: #ffefc0;
+            margin-bottom: 8px;
+            gap: 12px;
+            align-items: baseline;
+            flex-wrap: wrap;
+        }
+        .bpm-input {
+            background: #0f1a0f;
+            border: 1px solid #ffcf8a;
+            border-radius: 40px;
+            padding: 4px 12px;
+            width: 90px;
+            font-size: 16px;
+            font-weight: 700;
+            font-family: monospace;
+            color: #ffefcf;
+            text-align: center;
+        }
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            -webkit-appearance: none;
+            background: #3a503a;
+            border-radius: 10px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #FFD58C;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 8px #ffbc5e;
+            border: none;
+        }
+        .value-display {
+            font-size: clamp(17px, 2.8vw, 26px);
+            font-weight: 800;
+            font-family: monospace;
+            background: #0f1a0fe0;
+            display: inline-block;
+            padding: 2px 16px;
+            border-radius: 50px;
+            color: #ffefcf;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .warning-panel {
+            margin-top: 20px;
+            display: flex;
+            gap: 18px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .warning-message {
+            background: #aa3322dd;
+            padding: 6px 26px;
+            border-radius: 60px;
+            color: #ffe5c4;
+            font-weight: 700;
+            font-size: clamp(0.85rem, 2vw, 1.15rem);
+        }
+        .advice-message {
+            background: #2d642dcc;
+            padding: 6px 30px;
+            border-radius: 60px;
+            color: #eaffdf;
+            font-weight: 700;
+            border: 1.5px solid #7fff7b;
+            font-size: clamp(0.85rem, 2vw, 1.15rem);
+        }
+        .highlight-ar {
+            color: #ccffaa;
+            font-weight: 900;
+            text-shadow: 0 0 6px #4eff3a;
+        }
+        .status-ok {
+            font-size: 0.9rem;
+            background: #1f3522;
+            padding: 5px 28px;
+            border-radius: 60px;
+            color: #c3f0b5;
+        }
+        @media (max-width: 800px) {
+            .control-panel { flex-direction: column; gap: 16px; align-items: stretch; }
+            .left-block, .right-block { gap: 6px; }
+            .bpm-input { width: 80px; }
+            .vizor-container { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+<div id="vizorApp">
+    <div class="vizor-container">
+        <div class="vizor-content">
+            <div class="info-bar-top">
+                <div class="left-block">
+                    <div class="vizor-eye white-color">
+                        <span class="value-number" id="quarters1Display">0</span>
+                        <span class="unit-label">/1</span>
+                    </div>
+                    <div class="vizor-eye red-color">
+                        <span class="value-number" id="quarters2Display">0</span>
+                        <span class="unit-label">/2</span>
+                    </div>
+                    <div class="vizor-eye blue-color">
+                        <span class="value-number" id="quarters4Display">0</span>
+                        <span class="unit-label">/4</span>
+                    </div>
+                </div>
+                <div class="center-title">
+                    <span class="title-text">Взор</span>
+                </div>
+                <div class="right-block">
+                    <div class="vizor-eye cyan-color">
+                        <span class="unit-label">ms</span>
+                        <span class="value-number" id="preemptMsSpan">450</span>
+                    </div>
+                    <div class="vizor-eye magenta-color">
+                        <span class="unit-label">BPM</span>
+                        <span class="value-number" id="bpmSpan">120.0</span>
+                    </div>
+                    <div class="vizor-eye yellow-color">
+                        <span class="unit-label">AR</span>
+                        <span class="value-number" id="arSpan">9.500</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- шкала 1: обычный AR -->
+            <div class="ruler-section">
+                <div class="ruler-header">
+                    <span class="ruler-title">◈ Обычный подход</span>
+                    <span class="ruler-title">AR исходный</span>
+                </div>
+                <div class="beat-ruler">
+                    <div class="ruler-strip" id="rulerStrip"></div>
+                    <div id="pointerIndicator" class="pointer-indicator"><div class="glow"></div></div>
+                </div>
+            </div>
+
+            <!-- шкала 2: Hard Rock -->
+            <div class="ruler-section">
+                <div class="ruler-header">
+                    <span class="ruler-title">⛰ Hard Rock</span>
+                    <span class="hr-badge" id="hrBadge">AR_до_HR = ?</span>
+                </div>
+                <div class="beat-ruler">
+                    <div class="ruler-strip" id="rulerStripHR"></div>
+                    <div id="pointerIndicatorHR" class="pointer-indicator"><div class="glow"></div></div>
+                </div>
+            </div>
+
+            <div class="control-panel">
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>🎵 BPM</span>
+                        <div style="display: flex; gap: 12px; align-items: center;">
+                            <input type="number" id="bpmNumberInput" class="bpm-input" step="0.5" value="120">
+                            <span class="value-display" id="bpmValueLabel">120.0</span>
+                        </div>
+                    </div>
+                    <input type="range" id="bpmSlider" min="50" max="300" step="0.5" value="120">
+                </div>
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>🎯 Целевые такты (/1)</span>
+                        <span class="value-display" id="targetBeatsLabel">2.000</span>
+                    </div>
+                    <input type="range" id="targetBeatsSlider" min="0.5" max="6.0" step="0.125" value="2.0">
+                </div>
+            </div>
+
+            <div class="warning-panel" id="warningPanel">
+                <div id="warningMsgDiv" class="warning-message" style="display: none;">⚠️ созерцание искажено ⚠️</div>
+                <div id="adviceMsgDiv" class="advice-message" style="display: none;"></div>
+                <div id="statusOkDiv" class="status-ok">✓ ритмический резонанс</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function(){
+        // ---------- расчёты ----------
+        function calculatePreemptMs(ar) {
+            if (ar === undefined || ar === null) return 450;
+            let a = Math.min(11, Math.max(0, ar));
+            if (a <= 10) return 1950 - 150 * a;
+            return 450 - 50 * (a - 10);
+        }
+
+        function reverseHardRock(arAfterHR) {
+            let original = arAfterHR / 1.4;
+            if (original > 11) original = 11;
+            if (original < 0) original = 0;
+            return original;
+        }
+
+        function findARbyTargetBeats(bpm, targetBeats) {
+            if (!bpm || bpm <= 0) return 9.5;
+            const beatLenMs = 60000 / bpm;
+            let bestAR = 9.5;
+            let bestDiff = Infinity;
+            for (let ar = 0; ar <= 11; ar += 0.01) {
+                const pre = calculatePreemptMs(ar);
+                const vizorBeats = pre / beatLenMs;
+                const diff = Math.abs(vizorBeats - targetBeats);
+                if (diff < bestDiff - 1e-8) {
+                    bestDiff = diff;
+                    bestAR = ar;
+                }
+                if (diff < 0.0003) break;
+            }
+            return bestAR;
+        }
+
+        // совет только для /8: два соседних целых значения
+        function getEighthAdvice(vizorBeats) {
+            const q8 = vizorBeats * 8;
+            const rounded = Math.round(q8);
+            if (Math.abs(q8 - rounded) < 0.002) return []; // уже целое /8
+            
+            const floor8 = Math.floor(q8);
+            const ceil8 = Math.ceil(q8);
+            const result = [];
+            if (floor8 !== rounded) result.push(floor8);
+            if (ceil8 !== rounded && ceil8 !== floor8) result.push(ceil8);
+            return result.slice(0, 2);
+        }
+
+        function findARforEighthValue(bpm, eighthValue) {
+            const beatLenMs = 60000 / bpm;
+            const desiredVizorBeats = eighthValue / 8;
+            return findARbyTargetBeats(bpm, desiredVizorBeats);
+        }
+
+        // построение шкалы
+        function buildBeatMarkers(maxBound, container) {
+            const step = 0.125;
+            container.innerHTML = '';
+            for (let pos = 0; pos <= maxBound + 0.001; pos += step) {
+                const isInt = Math.abs(pos - Math.round(pos)) < 0.0001;
+                const isHalf = (!isInt) && (Math.abs(pos*2 - Math.round(pos*2)) < 0.0001);
+                const isQuarter = (!isInt && !isHalf) && (Math.abs(pos*4 - Math.round(pos*4)) < 0.0001);
+                let typeClass = 'blue-beat';
+                let isDot = false;
+                if (isInt) {
+                    typeClass = 'white-beat';
+                } else if (isHalf) {
+                    typeClass = 'red-beat';
+                } else if (isQuarter) {
+                    typeClass = 'blue-beat';
+                } else {
+                    isDot = true;
+                }
+                const marker = document.createElement('div');
+                marker.className = `beat-marker ${typeClass}`;
+                marker.style.left = (pos / maxBound) * 100 + '%';
+                if (isDot) {
+                    const dot = document.createElement('div');
+                    dot.className = 'green-dot';
+                    marker.appendChild(dot);
+                } else {
+                    const line = document.createElement('div');
+                    line.className = 'bar-line';
+                    marker.appendChild(line);
+                }
+                if (isInt) {
+                    const idxSpan = document.createElement('div');
+                    idxSpan.className = 'beat-index';
+                    idxSpan.innerText = `${Math.round(pos)}`;
+                    marker.appendChild(idxSpan);
+                }
+                container.appendChild(marker);
+            }
+        }
+
+        // DOM элементы
+        const bpmSlider = document.getElementById('bpmSlider');
+        const bpmNumberInput = document.getElementById('bpmNumberInput');
+        const targetBeatsSlider = document.getElementById('targetBeatsSlider');
+        
+        const quarters1Span = document.getElementById('quarters1Display');
+        const quarters2Span = document.getElementById('quarters2Display');
+        const quarters4Span = document.getElementById('quarters4Display');
+        const preemptSpan = document.getElementById('preemptMsSpan');
+        const bpmSpan = document.getElementById('bpmSpan');
+        const arSpan = document.getElementById('arSpan');
+        const bpmValueLabel = document.getElementById('bpmValueLabel');
+        const targetBeatsLabel = document.getElementById('targetBeatsLabel');
+        const warningDiv = document.getElementById('warningMsgDiv');
+        const adviceMsgDiv = document.getElementById('adviceMsgDiv');
+        const statusOkDiv = document.getElementById('statusOkDiv');
+        const rulerStrip = document.getElementById('rulerStrip');
+        const rulerStripHR = document.getElementById('rulerStripHR');
+        const pointer = document.getElementById('pointerIndicator');
+        const pointerHR = document.getElementById('pointerIndicatorHR');
+        const hrBadge = document.getElementById('hrBadge');
+
+        let currentAR = 9.5;
+        let currentBpm = 120;
+        let currentTargetBeats = 2.0;
+        
+        function updatePointer(element, vizorBeats, maxBound) {
+            // плавное ограничение, чтобы указатель не уходил за края
+            let percent = (vizorBeats / maxBound) * 100;
+            percent = Math.min(97, Math.max(3, percent));
+            element.style.left = percent + '%';
+        }
+        
+        function updateAll() {
+            currentBpm = parseFloat(bpmSlider.value);
+            currentTargetBeats = parseFloat(targetBeatsSlider.value);
+            
+            bpmNumberInput.value = currentBpm.toFixed(1);
+            bpmValueLabel.innerText = currentBpm.toFixed(1);
+            targetBeatsLabel.innerText = currentTargetBeats.toFixed(3);
+            bpmSpan.innerText = currentBpm.toFixed(1);
+            
+            currentAR = findARbyTargetBeats(currentBpm, currentTargetBeats);
+            arSpan.innerText = currentAR.toFixed(3);
+            
+            const preempt = calculatePreemptMs(currentAR);
+            preemptSpan.innerText = Math.round(preempt);
+            const beatLen = 60000 / currentBpm;
+            const vizorBeats = preempt / beatLen;
+            
+            const q1 = vizorBeats;
+            const q2 = vizorBeats * 2;
+            const q4 = vizorBeats * 4;
+            quarters1Span.innerText = Math.abs(q1 - Math.round(q1)) < 0.0005 ? Math.round(q1).toString() : q1.toFixed(3);
+            quarters2Span.innerText = Math.abs(q2 - Math.round(q2)) < 0.0005 ? Math.round(q2).toString() : q2.toFixed(3);
+            quarters4Span.innerText = Math.abs(q4 - Math.round(q4)) < 0.0005 ? Math.round(q4).toString() : q4.toFixed(3);
+            
+            // проверка искажения только на /8
+            const q8 = vizorBeats * 8;
+            const isEighthFractional = Math.abs(q8 - Math.round(q8)) > 0.002;
+            const isWarning = isEighthFractional;
+            
+            // Советы только для /8: два соседних целых значения
+            let adviceHtml = '';
+            if (isWarning) {
+                const eighthValues = getEighthAdvice(vizorBeats);
+                const arSuggestions = [];
+                for (let ev of eighthValues) {
+                    const arVal = findARforEighthValue(currentBpm, ev);
+                    if (arVal && Math.abs(arVal - currentAR) > 0.02) {
+                        arSuggestions.push(arVal.toFixed(3));
+                    }
+                }
+                if (arSuggestions.length) {
+                    const uniqueAr = [...new Set(arSuggestions)];
+                    adviceHtml = `💡 Совет (для /8): AR ${uniqueAr.join(' · ')} 💡`;
+                    adviceMsgDiv.innerHTML = adviceHtml;
+                    adviceMsgDiv.style.display = 'flex';
+                } else {
+                    adviceMsgDiv.style.display = 'none';
+                }
+                warningDiv.style.display = 'flex';
+                statusOkDiv.style.display = 'none';
+            } else {
+                warningDiv.style.display = 'none';
+                adviceMsgDiv.style.display = 'none';
+                statusOkDiv.style.display = 'flex';
+            }
+            
+            // ----- Обычная шкала -----
+            let maxBoundNormal = Math.max(Math.ceil(vizorBeats), Math.ceil(currentTargetBeats) + 0.7);
+            if (maxBoundNormal < 1.5) maxBoundNormal = 1.5;
+            if (maxBoundNormal > 7) maxBoundNormal = 7;
+            buildBeatMarkers(maxBoundNormal, rulerStrip);
+            updatePointer(pointer, vizorBeats, maxBoundNormal);
+            
+            // ----- Hard Rock шкала (без слова "обзор") -----
+            const arBeforeHR = reverseHardRock(currentAR);
+            const hrPreempt = calculatePreemptMs(arBeforeHR);
+            const hrVizorBeats = hrPreempt / beatLen;
+            
+            let maxBoundHR = Math.max(Math.ceil(hrVizorBeats), Math.ceil(currentTargetBeats * 1.3) + 1.0);
+            if (maxBoundHR < 2.0) maxBoundHR = 2.0;
+            if (maxBoundHR > 9) maxBoundHR = 9;
+            buildBeatMarkers(maxBoundHR, rulerStripHR);
+            updatePointer(pointerHR, hrVizorBeats, maxBoundHR);
+            
+            hrBadge.innerHTML = `AR_до_HR = ${arBeforeHR.toFixed(3)} → после HR = ${currentAR.toFixed(3)}`;
+        }
+        
+        bpmSlider.addEventListener('input', (e) => {
+            bpmSlider.value = e.target.value;
+            updateAll();
+        });
+        bpmNumberInput.addEventListener('input', (e) => {
+            let val = parseFloat(e.target.value);
+            if (!isNaN(val) && val >= 50 && val <= 300) {
+                bpmSlider.value = val;
+                updateAll();
+            }
+        });
+        targetBeatsSlider.addEventListener('input', updateAll);
+        window.addEventListener('resize', updateAll);
+        
+        updateAll();
+    })();
+</script>
+</body>
+</html>
